@@ -2,7 +2,8 @@
 
 import json
 from clients.supabase_client import supabase
-from langchain import PromptTemplate, LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from clients.gemini_llm import GeminiLLM
 import logging # Add logging
 
@@ -28,6 +29,10 @@ def analyze_sentiment(review_id: str, text: str):
         output = chain.run(text=text)
         logging.info(f"Raw sentiment output for {review_id}: {output}")
 
+        if "```json" in output:
+            output = output.split("```json")[1]
+            output = output.split("```")[0].strip()  # Extract JSON part
+
         # Add try-except for JSON parsing
         try:
             data = json.loads(output)
@@ -37,7 +42,6 @@ def analyze_sentiment(review_id: str, text: str):
             summary = str(data["summary"]) # Ensure summary is a string
         except (json.JSONDecodeError, ValueError, TypeError) as e:
             logging.error(f"Failed to parse sentiment JSON for review {review_id}: {e}. Output was: {output}")
-            # Optionally, store a default/error state in Supabase or skip insert
             return
 
         supabase.table("sentiments").insert({

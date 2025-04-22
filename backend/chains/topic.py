@@ -1,7 +1,8 @@
 # backend/chains/topic.py
 
 import json
-from langchain import PromptTemplate, LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from clients.pinecone_client import query_similar
 from clients.supabase_client import supabase
 from clients.gemini_llm import GeminiLLM

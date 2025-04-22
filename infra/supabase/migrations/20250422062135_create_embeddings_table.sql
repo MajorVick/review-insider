@@ -1,6 +1,6 @@
 create table if not exists embeddings (
   review_id uuid      references reviews(id) on delete cascade,
-  vector    vector(1024),  -- adjust dimension to Gemini’s embedding size
+  vector    vector(768),  -- adjust dimension to Gemini’s embedding size
   service   text,
   location  text,
   product   text,

@@ -1,7 +1,8 @@
 # backend/chains/classification.py
 
 from clients.supabase_client import supabase
-from langchain import PromptTemplate, LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from clients.gemini_llm import GeminiLLM
 
 PROMPT = PromptTemplate(
