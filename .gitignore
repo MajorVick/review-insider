@@ -1,0 +1,22 @@
+# Node.js
+/frontend/node_modules/
+/frontend/.next/
+/frontend/dist/
+
+# Supabase
+/infra/node_modules/
+/infra/package.json
+/infra/package-lock.json
+
+# Python
+/backend/.venv/
+/backend/__pycache__/
+/backend/*.py[cod]
+
+# Env files
+*.env
+.env.local
+.env.*.local
+
+# Misc
+.DS_Store
