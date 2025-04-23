@@ -7,6 +7,8 @@ from clients.supabase_client import supabase
 from chains.embedding import embed_and_store
 from chains.sentiment import analyze_sentiment
 from chains.classification import classify_review
+from chains.topic import extract_and_store_topics
+from chains.summary import generate_and_store_weekly_summary
 import logging # Add logging
 
 app = Flask(__name__)
@@ -62,6 +64,43 @@ def webhook_reviews():
     except Exception as e:
         logging.error(f"Unhandled error in webhook_reviews: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/tasks/run-topic-extraction", methods=["POST"])
+def run_topic_extraction_task():
+    """
+    Manually triggers the topic extraction process.
+    In production, this would be called by a scheduler (e.g., daily).
+    """
+    logging.info("Received request to run topic extraction.")
+    try:
+        # You might want to add parameters here later (e.g., k, sample_size)
+        # passed via request body if needed.
+        extract_and_store_topics()
+        logging.info("Topic extraction task completed successfully.")
+        return jsonify({"status": "ok", "message": "Topic extraction started."}), 200
+    except Exception as e:
+        logging.error(f"Error during topic extraction task: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": "Topic extraction failed."}), 500
+
+@app.route("/tasks/run-weekly-summary", methods=["POST"])
+def run_weekly_summary_task():
+    """
+    Manually triggers the weekly summary generation and storage.
+    """
+    logging.info("Received request to run weekly summary.")
+    try:
+        # Call the function that now also stores the summary
+        summary_text = generate_and_store_weekly_summary()
+
+        if summary_text:
+            logging.info("Weekly summary generation and storage task completed successfully.")
+            return jsonify({"status": "ok", "message": "Weekly summary generated and stored."}), 200
+        else:
+             logging.warning("Weekly summary generation returned no text.")
+             return jsonify({"status": "ok", "message": "Weekly summary generation complete (no text generated or stored)."}), 200
+    except Exception as e:
+        logging.error(f"Error during weekly summary task: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": "Weekly summary task failed."}), 500
 
 
 if __name__ == "__main__":
