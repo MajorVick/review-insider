@@ -1,7 +1,7 @@
 // src/components/SentimentChart.tsx
-"use client"; // Mark as a Client Component
+"use client";
 
-import { Line } from 'react-chartjs-2';
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,9 +11,9 @@ import {
   Title,
   Tooltip,
   Legend,
-  TimeScale, // Import TimeScale
-} from 'chart.js';
-import 'chartjs-adapter-date-fns'; // Import the date adapter
+  TimeScale,
+} from "chart.js";
+import "chartjs-adapter-date-fns";
 
 // Register necessary Chart.js components
 ChartJS.register(
@@ -24,7 +24,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  TimeScale // Register TimeScale
+  TimeScale
 );
 
 type SentimentDataPoint = {
@@ -38,62 +38,114 @@ interface SentimentChartProps {
 
 export default function SentimentChart({ data }: SentimentChartProps) {
   const chartData = {
-    // Use dates directly for the time scale
-    labels: data.map(d => new Date(d.review_date)),
+    labels: data.map((d) => new Date(d.review_date)),
     datasets: [
       {
-        label: 'Sentiment Score (1-5)',
-        data: data.map(d => d.score),
+        label: "Sentiment Score",
+        data: data.map((d) => d.score),
         fill: false,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1,
+        borderColor: "rgb(59, 130, 246)", // Blue
+        backgroundColor: "rgba(59, 130, 246, 0.5)",
+        tension: 0.2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        pointBackgroundColor: "rgb(59, 130, 246)",
       },
     ],
   };
 
   const options = {
     responsive: true,
-    maintainAspectRatio: false, // Allow chart to fill container height
+    maintainAspectRatio: false,
     scales: {
       x: {
-        type: 'time' as const, // Specify 'time' scale
+        type: "time" as const,
         time: {
-          unit: 'day' as const, // Display unit (day, week, month)
-          tooltipFormat: 'PPpp', // Format for tooltips (e.g., Apr 23, 2025, 1:00:00 PM)
+          unit: "day" as const,
+          tooltipFormat: "PPP", // Format for tooltips (e.g., Apr 23, 2025)
           displayFormats: {
-             day: 'MMM d' // Format for axis labels (e.g., Apr 23)
-          }
+            day: "MMM d", // Format for axis labels (e.g., Apr 23)
+          },
         },
         title: {
           display: true,
-          text: 'Date',
+          text: "Date",
+          color: "#64748b", // Slate-500
+          font: {
+            size: 13,
+          },
+        },
+        grid: {
+          display: true,
+          color: "rgba(226, 232, 240, 0.5)", // Slate-200 with opacity
+        },
+        ticks: {
+          color: "#64748b", // Slate-500
         },
       },
       y: {
-        beginAtZero: false, // Don't force start at 0
-        min: 1, // Set min/max for sentiment score
+        beginAtZero: false,
+        min: 1,
         max: 5,
         title: {
           display: true,
-          text: 'Sentiment Score',
+          text: "Sentiment Score (1-5)",
+          color: "#64748b", // Slate-500
+          font: {
+            size: 13,
+          },
+        },
+        grid: {
+          color: "rgba(226, 232, 240, 0.5)", // Slate-200 with opacity
+        },
+        ticks: {
+          precision: 0,
+          stepSize: 1,
+          color: "#64748b", // Slate-500
         },
       },
     },
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: "top" as const,
+        labels: {
+          boxWidth: 12,
+          usePointStyle: true,
+          pointStyle: "circle",
+          color: "#475569", // Slate-600
+        },
       },
-      title: {
-        display: false, // Hide default chart title (we have our own heading)
-        // text: 'Sentiment Score Over Time',
+      tooltip: {
+        backgroundColor: "rgba(15, 23, 42, 0.8)", // Slate-900 with opacity
+        titleColor: "#f8fafc", // Slate-50
+        bodyColor: "#f1f5f9", // Slate-100
+        cornerRadius: 6,
+        padding: 10,
+        displayColors: false,
+        callbacks: {
+          title: (context: any) => {
+            // Format the date in the tooltip title
+            const date = new Date(context[0].label);
+            return date.toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+          },
+          label: (context: any) => {
+            return `Sentiment Score: ${context.raw}`;
+          },
+        },
       },
     },
   };
 
-  // Add a container with a defined height for the chart
   return (
-    <div style={{ height: '300px', position: 'relative' }}>
-      <Line options={options} data={chartData} />
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+      <div className="h-[300px] relative">
+        <Line options={options} data={chartData} />
+      </div>
     </div>
   );
 }

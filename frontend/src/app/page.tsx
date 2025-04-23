@@ -1,59 +1,91 @@
 // src/app/page.tsx
-
-import { supabase } from '@/lib/supabaseClient'; // Import Supabase client
-import SentimentChart from '@/components/SentimentChart'; // We will create this next
-
+import { supabase } from "@/lib/supabaseClient";
+import SentimentChart from "@/components/SentimentChart";
+import LoadingError from "@/components/LoadingError";
+import SentimentChartSkeleton from "@/components/SentimentChartSkeleton";
+import { Suspense } from "react";
 
 type SentimentDataPoint = {
-  review_date: string; // Keep as string initially
+  review_date: string;
   score: number | null;
 };
 
-export default async function Home() {
+// This component fetches and displays the sentiment data
+async function SentimentData() {
   // Fetch data directly in the Server Component
   const { data: sentimentData, error } = await supabase
-    .from('sentiments')
+    .from("sentiments")
     .select(`
       score,
       reviews ( review_date )
     `)
-    // Optional: Order by date if needed for the chart
-    // .order('review_date', { foreignTable: 'reviews', ascending: true })
-    // Optional: Limit the data fetched if it gets large
-    // .limit(100);
+    .order("created_at", { ascending: true })
+    .limit(100);
 
   if (error) {
     console.error("Error fetching sentiment data:", error);
-    // Handle error display appropriately
+    return <LoadingError error={error} errorMessage="Failed to load sentiment trend data." />;
   }
 
-  // Process data for the chart (ensure reviews relation is not null)
+  // Process data for the chart
   const chartData = sentimentData
-    ?.map(item => ({
-        // Access nested review_date correctly
-        review_date: item.reviews?.[0]?.review_date as string,
-        score: item.score
+    ?.map((item) => ({
+      review_date: Array.isArray(item.reviews) && item.reviews.length > 0
+        ? item.reviews[0].review_date
+        : null,
+      score: item.score,
     }))
-    // Filter out entries where review_date might be missing
-    .filter(item => item.review_date)
-    // Sort by date client-side if not done in query
-    .sort((a, b) => new Date(a.review_date).getTime() - new Date(b.review_date).getTime())
-    ?? []; // Provide empty array if data is null/undefined
+    .filter((item) => item.review_date)
+    .sort(
+      (a, b) =>
+        new Date(a.review_date).getTime() - new Date(b.review_date).getTime()
+    ) ?? [];
 
-  return (
-    <div> {/* Wrap content in a div if needed */}
-      <h1 className="text-2xl font-semibold mb-6">Overview</h1>
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-xl font-medium mb-3">Sentiment Trend</h2>
-        {error && <p className="text-red-500">Error loading sentiment data.</p>}
-        {!error && chartData.length > 0 && (
-          <SentimentChart data={chartData} />
-        )}
-        {!error && chartData.length === 0 && (
-          <p>No sentiment data available yet.</p>
-        )}
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow text-center">
+        <p className="text-gray-600">No sentiment data available yet.</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Sentiment data will appear here once reviews are processed.
+        </p>
       </div>
-      {/* Add more overview components here later */}
+    );
+  }
+
+  return <SentimentChart data={chartData} />;
+}
+
+export default function Home() {
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold mb-6">Dashboard Overview</h1>
+      
+      <div className="mb-8">
+        <h2 className="text-xl font-medium mb-4">Sentiment Trend</h2>
+        <Suspense fallback={<SentimentChartSkeleton />}>
+          <SentimentData />
+        </Suspense>
+      </div>
+
+      {/* Stats summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-700">Total Reviews</h3>
+          <p className="text-3xl font-bold mt-2">-</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-700">Avg. Sentiment</h3>
+          <p className="text-3xl font-bold mt-2">-</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-700">Top Topic</h3>
+          <p className="text-3xl font-bold mt-2">-</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-medium text-gray-700">Negative Alerts</h3>
+          <p className="text-3xl font-bold mt-2">-</p>
+        </div>
+      </div>
     </div>
   );
 }
